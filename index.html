@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>thirteen</title>
+    <title>Thirteen</title>
     <style>
         * {
             margin: 0;
@@ -17,7 +17,6 @@
             background-color: #1a0f0a;
         }
 
-        /* Pantalla de carga */
         #loadingScreen {
             position: fixed;
             top: 0;
@@ -38,7 +37,8 @@
             pointer-events: none;
         }
 
-        .loading-title {
+        .loading-title,
+        .menu-title {
             font-size: 3em;
             color: #d4a574;
             text-shadow: 3px 3px 6px #000, 0 0 20px #d4a574;
@@ -46,6 +46,13 @@
             letter-spacing: 4px;
             text-align: center;
             animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        .menu-title {
+            font-size: 4.5em;
+            letter-spacing: 8px;
+            margin-bottom: 50px;
+            z-index: 1;
         }
 
         @keyframes glow {
@@ -87,71 +94,21 @@
             font-weight: bold;
         }
 
-        /* Menú principal */
         #mainMenu {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: url(https://content-historia.nationalgeographic.com.es/medio/2017/07/03/257890_abbfbcb6.jpg);
-            background-size: 100px 100px;
+            background: url('menufoto.jpg');
+            background-size: cover;
+            background-position: center;
+            background-color: #1a0f0a;
             display: none;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             z-index: 500;
-        }
-
-        #mainMenu.visible {
-            display: flex;
-            animation: fadeIn 1s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        .menu-background {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(ellipse at center, rgba(61, 40, 23, 0.8) 0%, rgba(26, 15, 10, 0.95) 100%);
-            z-index: -1;
-        }
-
-        .battle-silhouette {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 200px;
-            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 200"><path d="M0,200 L0,150 Q50,130 100,140 Q150,120 200,135 Q250,110 300,125 Q350,105 400,120 Q450,100 500,115 Q550,95 600,110 Q650,90 700,105 Q750,85 800,100 Q850,80 900,95 Q950,75 1000,90 Q1050,70 1100,85 Q1150,65 1200,80 L1200,200 Z" fill="%230d0805" opacity="0.8"/></svg>');
-            background-size: cover;
-            background-position: bottom;
-            z-index: 0;
-        }
-
-        .game-title {
-            font-size: 4em;
-            color: #d4a574;
-            text-shadow: 4px 4px 8px #000, 0 0 30px rgba(212, 165, 116, 0.5);
-            margin-bottom: 10px;
-            letter-spacing: 6px;
-            text-align: center;
-            z-index: 1;
-        }
-
-        .game-subtitle {
-            font-size: 1.5em;
-            color: #a08050;
-            letter-spacing: 8px;
-            margin-bottom: 60px;
-            text-transform: uppercase;
-            z-index: 1;
         }
 
         .menu-buttons {
@@ -205,7 +162,6 @@
             transform: scale(0.98);
         }
 
-        /* Panel de ajustes */
         #settingsPanel {
             position: fixed;
             top: 0;
@@ -222,6 +178,11 @@
         #settingsPanel.visible {
             display: flex;
             animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
         .settings-content {
@@ -258,7 +219,6 @@
             padding-bottom: 8px;
         }
 
-        /* Dificultades */
         .difficulty-options {
             display: flex;
             gap: 15px;
@@ -293,7 +253,6 @@
             box-shadow: 0 0 15px rgba(212, 165, 116, 0.4);
         }
 
-        /* Controles de audio */
         .audio-control {
             display: flex;
             align-items: center;
@@ -348,7 +307,6 @@
             text-align: right;
         }
 
-        /* Botón volver */
         .back-btn {
             display: block;
             margin: 30px auto 0;
@@ -372,7 +330,6 @@
             box-shadow: 0 0 20px rgba(212, 165, 116, 0.5);
         }
 
-        /* Scrollbar personalizada */
         .settings-content::-webkit-scrollbar {
             width: 10px;
         }
@@ -391,7 +348,6 @@
             background: #d4a574;
         }
 
-        /* Indicador de música */
         .music-indicator {
             position: fixed;
             bottom: 20px;
@@ -399,7 +355,7 @@
             color: #d4a574;
             font-size: 0.9em;
             letter-spacing: 2px;
-            z-index: 100;
+            z-index: 2000;
             display: flex;
             align-items: center;
             gap: 8px;
@@ -415,10 +371,9 @@
             50% { transform: scale(1.2); opacity: 1; }
         }
 
-        /* Responsive */
         @media (max-width: 768px) {
-            .game-title { font-size: 2.5em; letter-spacing: 3px; }
-            .game-subtitle { font-size: 1em; letter-spacing: 4px; }
+            .loading-title { font-size: 2.5em; letter-spacing: 3px; }
+            .menu-title { font-size: 3em; letter-spacing: 5px; }
             .menu-btn { padding: 15px 40px; font-size: 1.1em; min-width: 250px; }
             .settings-content { padding: 25px 30px; }
             .settings-title { font-size: 1.8em; }
@@ -426,90 +381,78 @@
         }
 
         @media (max-width: 480px) {
-            .game-title { font-size: 1.8em; }
+            .loading-title { font-size: 1.8em; }
+            .menu-title { font-size: 2.2em; letter-spacing: 3px; }
             .menu-btn { padding: 12px 30px; font-size: 1em; min-width: 200px; }
         }
     </style>
 </head>
 <body>
 
-    <!-- PANTALLA DE CARGA -->
     <div id="loadingScreen">
-        <h1 class="loading-title">⚔ GUERRA CIVIL AMERICANA ⚔</h1>
+        <h1 class="loading-title">⚔ THIRTEEN ⚔</h1>
         <div class="loading-bar-container">
             <div class="loading-bar" id="loadingBar"></div>
         </div>
-        <p class="loading-text" id="loadingText">Cargando recursos...</p>
+        <p class="loading-text" id="loadingText">Loading resources...</p>
         <p class="loading-percentage" id="loadingPercentage">0%</p>
     </div>
 
-    <!-- MENÚ PRINCIPAL -->
     <div id="mainMenu">
-        <div class="menu-background"></div>
-        <div class="battle-silhouette"></div>
-        <h1 class="game-title">GUERRA CIVIL</h1>
-        <p class="game-subtitle">Estados Unidos 1861 - 1865</p>
+        <h1 class="menu-title">⚔ THIRTEEN ⚔</h1>
         <div class="menu-buttons">
-            <button class="menu-btn" id="btnNewGame">▶ Iniciar Juego</button>
-            <button class="menu-btn" id="btnSettings">⚙ Ajustes</button>
+            <button class="menu-btn" id="btnNewGame">▶ New Game</button>
+            <button class="menu-btn" id="btnSettings">⚙ Settings</button>
         </div>
     </div>
 
-    <!-- PANEL DE AJUSTES -->
     <div id="settingsPanel">
         <div class="settings-content">
-            <h2 class="settings-title">⚙ AJUSTES</h2>
+            <h2 class="settings-title">⚙ SETTINGS</h2>
 
-            <!-- Dificultad -->
             <div class="settings-section">
-                <h3>🎯 Dificultad</h3>
+                <h3>🎯 Difficulty</h3>
                 <div class="difficulty-options">
-                    <button class="difficulty-btn" data-difficulty="easy">Fácil</button>
+                    <button class="difficulty-btn" data-difficulty="easy">Easy</button>
                     <button class="difficulty-btn active" data-difficulty="normal">Normal</button>
-                    <button class="difficulty-btn" data-difficulty="hard">Difícil</button>
-                    <button class="difficulty-btn" data-difficulty="hardcore">Extremo</button>
+                    <button class="difficulty-btn" data-difficulty="hard">Hard</button>
+                    <button class="difficulty-btn" data-difficulty="hardcore">Hardcore</button>
                 </div>
             </div>
 
-            <!-- Audio -->
             <div class="settings-section">
                 <h3>🔊 Audio</h3>
                 <div class="audio-control">
-                    <label>🎵 Música</label>
+                    <label>🎵 Music</label>
                     <input type="range" id="musicVolume" min="0" max="100" value="70">
                     <span class="audio-value" id="musicValue">70%</span>
                 </div>
                 <div class="audio-control">
-                    <label>🔔 Efects</label>
+                    <label>🔔 Effects</label>
                     <input type="range" id="sfxVolume" min="0" max="100" value="80">
                     <span class="audio-value" id="sfxValue">80%</span>
                 </div>
                 <div class="audio-control">
-                    <label>🔇 mute</label>
+                    <label>🔇 Master</label>
                     <input type="range" id="masterVolume" min="0" max="100" value="100">
                     <span class="audio-value" id="masterValue">100%</span>
                 </div>
             </div>
 
-            <button class="back-btn" id="btnBack">← menu</button>
+            <button class="back-btn" id="btnBack">← Back to Menu</button>
         </div>
     </div>
 
     <div class="music-indicator">
         <span class="music-note">♪</span>
-        <span>music</span>
+        <span id="musicStatus">Music playing</span>
     </div>
 
- 
-    <audio id="backgroundMusic" loop>
-        <source src="hoi4theme" type="audio/mpeg">
-        Tu navegador no soporta audio HTML5.
-    </audio>
+    <audio id="backgroundMusic" src="trackmenu.mp3" preload="auto" loop playsinline></audio>
 
     <script>
-     {
-            gameURL: 'juego.html', // ← Cambia esto por la URL de tu juego
-            musicFile: 'musica_guerra_civil.mp3',
+        const CONFIG = {
+            gameURL: 'juego.html',
             loadingDuration: 4000
         };
 
@@ -521,9 +464,6 @@
             isLoading: true
         };
 
-        // ============================================
-        // ELEMENTOS DEL DOM
-        // ============================================
         const loadingScreen = document.getElementById('loadingScreen');
         const loadingBar = document.getElementById('loadingBar');
         const loadingText = document.getElementById('loadingText');
@@ -531,6 +471,7 @@
         const mainMenu = document.getElementById('mainMenu');
         const settingsPanel = document.getElementById('settingsPanel');
         const backgroundMusic = document.getElementById('backgroundMusic');
+        const musicStatus = document.getElementById('musicStatus');
 
         const btnNewGame = document.getElementById('btnNewGame');
         const btnSettings = document.getElementById('btnSettings');
@@ -546,17 +487,103 @@
 
         const difficultyBtns = document.querySelectorAll('.difficulty-btn');
 
-        // ============================================
-        // PANTALLA DE CARGA
-        // ============================================
         const loadingMessages = [
-            'Cargando recursos...',
-            'Preparando el campo de batalla...',
-            'Reclutando soldados...',
-            'Cargando música...',
-            'Preparando la artillería...',
-            '¡Listo para la batalla!'
+            'Loading resources...',
+            'Preparing the battlefield...',
+            'Recruiting soldiers...',
+            'Loading soundtrack...',
+            'Preparing the artillery...',
+            'Ready for battle!'
         ];
+
+        const unlockEvents = ['pointerdown', 'click', 'keydown', 'touchstart'];
+        let musicUnlocked = false;
+
+        function applyMusicVolume() {
+            backgroundMusic.volume = Math.min(1, Math.max(0, gameState.musicVolume * gameState.masterVolume));
+        }
+
+        function setStatus(text) {
+            musicStatus.textContent = text;
+        }
+
+        function removeUnlockListeners() {
+            unlockEvents.forEach(evt => document.removeEventListener(evt, unlockMusic, true));
+        }
+
+        function unlockMusic() {
+            if (musicUnlocked) return;
+            applyMusicVolume();
+            backgroundMusic.muted = false;
+            const p = backgroundMusic.play();
+            const finish = () => {
+                musicUnlocked = true;
+                setStatus('Music playing');
+                removeUnlockListeners();
+            };
+            if (p !== undefined) {
+                p.then(finish).catch(() => {});
+            } else {
+                finish();
+            }
+        }
+
+        function addUnlockListeners() {
+            unlockEvents.forEach(evt => document.addEventListener(evt, unlockMusic, true));
+        }
+
+        function startMusic() {
+            applyMusicVolume();
+            backgroundMusic.muted = false;
+            const p = backgroundMusic.play();
+            if (p === undefined) {
+                musicUnlocked = true;
+                return;
+            }
+            p.then(() => {
+                musicUnlocked = true;
+                setStatus('Music playing');
+            }).catch(() => {
+                backgroundMusic.muted = true;
+                backgroundMusic.play().then(() => {
+                    setStatus('Click anywhere to enable sound');
+                    addUnlockListeners();
+                }).catch(() => {
+                    setStatus('Click anywhere to enable sound');
+                    addUnlockListeners();
+                });
+            });
+        }
+
+        function keepMusicAlive() {
+            if (backgroundMusic.paused && musicUnlocked && !gameState.leaving) {
+                backgroundMusic.play().catch(() => {});
+            }
+        }
+
+        backgroundMusic.addEventListener('pause', () => {
+            if (!document.hidden && !gameState.leaving && musicUnlocked) {
+                setTimeout(keepMusicAlive, 150);
+            }
+        });
+
+        backgroundMusic.addEventListener('stalled', keepMusicAlive);
+        backgroundMusic.addEventListener('waiting', () => {
+            setTimeout(() => {
+                if (backgroundMusic.readyState < 3) {
+                    const t = backgroundMusic.currentTime;
+                    backgroundMusic.load();
+                    backgroundMusic.currentTime = t;
+                    backgroundMusic.play().catch(() => {});
+                }
+            }, 3000);
+        });
+
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) keepMusicAlive();
+        });
+
+        window.addEventListener('focus', keepMusicAlive);
 
         let progress = 0;
         const loadingInterval = setInterval(() => {
@@ -564,20 +591,17 @@
             if (progress >= 100) {
                 progress = 100;
                 clearInterval(loadingInterval);
-                
+
                 setTimeout(() => {
                     loadingScreen.classList.add('hidden');
-                    mainMenu.classList.add('visible');
+                    mainMenu.style.display = 'flex';
                     gameState.isLoading = false;
-                    // Intentar reproducir música después de la carga
-                    attemptPlayMusic();
                 }, 500);
             }
 
             loadingBar.style.width = progress + '%';
             loadingPercentage.textContent = Math.floor(progress) + '%';
 
-            // Cambiar mensaje según progreso
             const msgIndex = Math.min(
                 Math.floor((progress / 100) * loadingMessages.length),
                 loadingMessages.length - 1
@@ -585,61 +609,38 @@
             loadingText.textContent = loadingMessages[msgIndex];
         }, CONFIG.loadingDuration / 20);
 
-        function attemptPlayMusic() {
-            if (backgroundMusic && !gameState.isLoading) {
-                backgroundMusic.volume = gameState.musicVolume * gameState.masterVolume;
-                const playPromise = backgroundMusic.play();
-                if (playPromise !== undefined) {
-                    playPromise.catch(error => {
-                        console.log('Autoplay bloqueado. Se requiere interacción del usuario.');
-                        document.addEventListener('click', function playOnClick() {
-                            if (backgroundMusic.paused) {
-                                backgroundMusic.play().catch(e => console.log('Error:', e));
-                            }
-                            document.removeEventListener('click', playOnClick);
-                        }, { once: true });
-                    });
-                }
-            }
-        }
-
-        function updateMusicVolume() {
-            if (backgroundMusic) {
-                backgroundMusic.volume = gameState.musicVolume * gameState.masterVolume;
-            }
+        function saveSettings() {
+            try {
+                localStorage.setItem('gameSettings', JSON.stringify({
+                    difficulty: gameState.difficulty,
+                    musicVolume: gameState.musicVolume,
+                    sfxVolume: gameState.sfxVolume,
+                    masterVolume: gameState.masterVolume
+                }));
+            } catch (e) {}
         }
 
         btnSettings.addEventListener('click', () => {
-            mainMenu.classList.remove('visible');
+            mainMenu.style.display = 'none';
             settingsPanel.classList.add('visible');
         });
 
         btnBack.addEventListener('click', () => {
             settingsPanel.classList.remove('visible');
-            mainMenu.classList.add('visible');
+            mainMenu.style.display = 'flex';
         });
 
         btnNewGame.addEventListener('click', () => {
-            // Guardar configuración en localStorage
-            localStorage.setItem('gameSettings', JSON.stringify(gameState));
-            
-            // Efecto visual de salida
+            saveSettings();
+            gameState.leaving = true;
+
             mainMenu.style.transition = 'opacity 0.5s ease';
             mainMenu.style.opacity = '0';
-            
-            // Detener música
-            if (backgroundMusic) {
-                backgroundMusic.pause();
-            }
+
+            backgroundMusic.pause();
 
             setTimeout(() => {
-                // Buscar y cargar el juego
-                // Opción 1: Redirigir a la página del juego
                 window.location.href = CONFIG.gameURL;
-                
-                // Opción 2 (alternativa): Si el juego está en el mismo documento
-                // document.getElementById('gameContainer').style.display = 'block';
-                
             }, 500);
         });
 
@@ -648,9 +649,7 @@
                 difficultyBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 gameState.difficulty = btn.dataset.difficulty;
-                
-
-                localStorage.setItem('gameSettings', JSON.stringify(gameState));
+                saveSettings();
             });
         });
 
@@ -658,81 +657,72 @@
             const val = e.target.value;
             gameState.musicVolume = val / 100;
             musicValue.textContent = val + '%';
-            updateMusicVolume();
-            localStorage.setItem('gameSettings', JSON.stringify(gameState));
+            applyMusicVolume();
+            saveSettings();
         });
 
         sfxVolumeSlider.addEventListener('input', (e) => {
             const val = e.target.value;
             gameState.sfxVolume = val / 100;
             sfxValue.textContent = val + '%';
-            localStorage.setItem('gameSettings', JSON.stringify(gameState));
+            saveSettings();
         });
 
         masterVolumeSlider.addEventListener('input', (e) => {
             const val = e.target.value;
             gameState.masterVolume = val / 100;
             masterValue.textContent = val + '%';
-            updateMusicVolume();
-            localStorage.setItem('gameSettings', JSON.stringify(gameState));
+            applyMusicVolume();
+            saveSettings();
         });
 
         function loadSavedSettings() {
-            const saved = localStorage.getItem('gameSettings');
+            let saved = null;
+            try {
+                saved = localStorage.getItem('gameSettings');
+            } catch (e) {}
             if (saved) {
                 try {
                     const settings = JSON.parse(saved);
-                    
+
                     if (settings.difficulty) {
                         gameState.difficulty = settings.difficulty;
                         difficultyBtns.forEach(btn => {
                             btn.classList.toggle('active', btn.dataset.difficulty === settings.difficulty);
                         });
                     }
-                    
+
                     if (settings.musicVolume !== undefined) {
                         gameState.musicVolume = settings.musicVolume;
                         musicVolumeSlider.value = Math.round(settings.musicVolume * 100);
                         musicValue.textContent = Math.round(settings.musicVolume * 100) + '%';
                     }
-                    
+
                     if (settings.sfxVolume !== undefined) {
                         gameState.sfxVolume = settings.sfxVolume;
                         sfxVolumeSlider.value = Math.round(settings.sfxVolume * 100);
                         sfxValue.textContent = Math.round(settings.sfxVolume * 100) + '%';
                     }
-                    
+
                     if (settings.masterVolume !== undefined) {
                         gameState.masterVolume = settings.masterVolume;
                         masterVolumeSlider.value = Math.round(settings.masterVolume * 100);
                         masterValue.textContent = Math.round(settings.masterVolume * 100) + '%';
                     }
-                    
-                    updateMusicVolume();
-                } catch (e) {
-                    console.log('Error cargando configuración:', e);
-                }
+                } catch (e) {}
             }
+            applyMusicVolume();
         }
-
-        loadSavedSettings();
-
-        document.addEventListener('contextmenu', (e) => {
-            if (gameState.isLoading) {
-                e.preventDefault();
-            }
-        });
 
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && settingsPanel.classList.contains('visible')) {
                 settingsPanel.classList.remove('visible');
-                mainMenu.classList.add('visible');
+                mainMenu.style.display = 'flex';
             }
         });
 
-        console.log('⚔ Pantalla de carga iniciada - Guerra Civil Americana ⚔');
-        console.log('📁 Archivo de música:', CONFIG.musicFile);
-        console.log('🎮 URL del juego:', CONFIG.gameURL);
+        loadSavedSettings();
+        startMusic();
     </script>
 </body>
 </html>
