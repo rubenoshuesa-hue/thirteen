@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thirteen - Phase 2: Boston Tea Party</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background-color: #000; overflow: hidden; font-family: 'VT323', monospace; color: #fff; }
+        #gameContainer { position: relative; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; }
+        canvas { background-color: #111; image-rendering: pixelated; box-shadow: 0 0 50px rgba(0,0,0,1); }
+        
+        #vignette { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; background: radial-gradient(circle, rgba(0,0,0,0) 40%, rgba(0,0,0,0.85) 100%); box-shadow: inset 0 0 100px rgba(0,0,0,1); z-index: 10; }
+        
+        #dialogueBox { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 800px; height: 160px; background-color: #000; border: 4px solid #fff; border-radius: 10px; padding: 20px; display: none; z-index: 20; }
+        #dialogueBox.active { display: flex; align-items: flex-start; gap: 20px; }
+        #speakerPortrait { width: 100px; height: 100px; border: 2px solid #555; background-color: #222; object-fit: contain; image-rendering: pixelated; }
+        #textContainer { flex: 1; display: flex; flex-direction: column; }
+        #speakerName { font-size: 24px; color: #f4c89a; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 2px; }
+        #dialogueText { font-size: 28px; line-height: 1.1; color: #ddd; white-space: pre-wrap; }
+        #continueIndicator { position: absolute; bottom: 10px; right: 20px; font-size: 24px; color: #fff; animation: bounce 0.5s infinite alternate; display: none; }
+        @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(5px); } }
+
+        #interactionHUD { position: absolute; top: 20px; right: 20px; font-size: 20px; color: #fff; background: #000; border: 2px solid #fff; padding: 10px; display: none; z-index: 15; }
+        
+        #fadeToBlack { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; opacity: 0; pointer-events: none; z-index: 40; transition: opacity 2s ease; }
+        #phaseEnd { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; display: none; z-index: 50; }
+        #phaseEnd h1 { font-size: 48px; color: #d4a574; letter-spacing: 4px; text-shadow: 0 0 20px #d4a574; }
+    </style>
+</head>
+<body>
+
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        <div id="vignette"></div>
+        
+        <div id="interactionHUD">Press <b>E</b> to interact</div>
+
+        <div id="dialogueBox">
+            <canvas id="speakerPortrait" width="48" height="48"></canvas>
+            <div id="textContainer">
+                <div id="speakerName"></div>
+                <div id="dialogueText"></div>
+            </div>
+            <div id="continueIndicator">▼</div>
+        </div>
+
+        <div id="fadeToBlack"></div>
+        <div id="phaseEnd">
+            <h1>END OF PHASE 2<br><span style="font-size:24px; color:#fff;">Next: Lexington & Concord</span></h1>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // 1. GUION DEL ACTO 2 (Boston Tea Party)
+        // ==========================================
+        const SCRIPT = {
+            intro: { 
+                type: "narration", 
+                text: "December 16th, 1773. Griffin's Wharf, Boston.\nThousands of colonists gather, angry at the Tea Act.", 
+                next: "meet_person2" 
+            },
+            meet_person2: { 
+                speaker: "Person 2", 
+                portraitType: "person2",
+                text: "The tea taxes are ruining us! We must take action.\nTalk to the others and we will show the British what we think!", 
+                next: "meet_person3" 
+            },
+            meet_person3: { 
+                speaker: "Person 3", 
+                portraitType: "person3",
+                text: "We are tired of being taxed without representation!\nWe must throw the tea into the harbor!", 
+                next: "meet_person4" 
+            },
+            meet_person4: { 
+                speaker: "Person 4", 
+                portraitType: "person4",
+                text: "Tonight, we make history. No more British tea!", 
+                action: () => { startRiot(); },
+                next: "riot_start" 
+            },
+            riot_start: { 
+                type: "narration", 
+                text: "The colonists, disguised as Mohawk Indians, storm the ships.\nThey start throwing crates of tea, rocks and sticks into the water!", 
+                action: () => { spawnFallingObjects(); },
+                next: "riot_end" 
+            },
+            riot_end: { 
+                type: "narration", 
+                text: "The harbor is filled with floating tea.\nThe Boston Tea Party is a success.", 
+                action: () => { startFadeOut(); },
+                next: "end_phase" 
+            },
+            end_phase: { 
+                type: "narration", 
+                text: "The screen slowly fades to black. The phase has ended.", 
+                action: () => { showPhaseEnd(); }, 
+                next: null 
+            }
+        };
+
+        // ==========================================
+        // 2. CONFIGURACIÓN Y ESTADO GLOBAL
+        // ==========================================
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const GAME_WIDTH = 800;
+        const GAME_HEIGHT = 600;
+        canvas.width = GAME_WIDTH;
+        canvas.height = GAME_HEIGHT;
+
+        let gameState = { currentTextNode: null, isTyping: false, typeTimer: null, currentCharIndex: 0, typeSpeed: 30, canAdvance: false, isDialogueActive: false };
+        const entities = [];
+        const projectiles = []; // Para las rocas y palos
+        let player = null;
+        let interactableNPC = null;
+
+        // Cargar fondo si existe
+        const bgImage = new Image();
+        bgImage.src = 'scenarios/boston_harbor_night.png'; // Si no existe, usará color plano
+
+        // ==========================================
+        // 3. SISTEMA DE AUDIO SINTETIZADO
+        // ==========================================
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSFX(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            const now = audioCtx.currentTime;
+
+            if (type === 'blip') {
+                osc.type = 'square'; osc.frequency.setValueAtTime(440, now); gain.gain.setValueAtTime(0.05, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05); osc.start(now); osc.stop(now + 0.05);
+            } else if (type === 'splash') {
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(200, now); osc.frequency.exponentialRampToValueAtTime(50, now + 0.3);
+                gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3); osc.start(now); osc.stop(now + 0.3);
+            } else if (type === 'throw') {
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(300, now); osc.frequency.linearRampToValueAtTime(100, now + 0.2);
+                gain.gain.setValueAtTime(0.05, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2); osc.start(now); osc.stop(now + 0.2);
+            }
+        }
+
+        // ==========================================
+        // 4. DIBUJO PROCEDURAL DE SPRITES (Basado en tu cuaderno)
+        // ==========================================
+        function drawCharacter(ctx, x, y, type, facing = 'down') {
+            const cx = x + 24;
+            const cy = y + 24;
+
+            // Colores base
+            let skin = '#f4d0b5';
+            let hair = '#333';
+            let shirt = '#fff';
+            let pants = '#333';
+
+            // Configuración según el personaje
+            if (type === 'player') { // Persona 1 (Pelo rubio, camisa roja y amarilla)
+                hair = '#f1c40f'; shirt = '#e74c3c'; pants = '#2c3e50';
+            } else if (type === 'person2') { // Persona 2 (Pelo rubio, camisa roja a rayas)
+                hair = '#f1c40f'; shirt = '#e74c3c'; pants = '#2c3e50';
+            } else if (type === 'person3') { // Persona 3 (Pelo castaño, camisa roja)
+                hair = '#8b4513'; shirt = '#c0392b'; pants = '#333';
+            } else if (type === 'person4') { // Persona 4 (Pelo castaño, camisa azul)
+                hair = '#5d4037'; shirt = '#2980b9'; pants = '#333';
+            }
+
+            // Sombra
+            ctx.fillStyle = 'rgba(0,0,0,0.4)';
+            ctx.beginPath(); ctx.ellipse(cx, y + 48, 16, 6, 0, 0, Math.PI * 2); ctx.fill();
+
+            // Piernas
+            ctx.fillStyle = pants;
+            ctx.fillRect(x + 10, y + 32, 10, 16); // Izquierda
+            ctx.fillRect(x + 28, y + 32, 10, 16); // Derecha
+
+            // Cuerpo (Camisa)
+            ctx.fillStyle = shirt;
+            ctx.fillRect(x + 8, y + 16, 32, 20);
+            
+            // Detalle camisa Persona 1 (Rayas)
+            if (type === 'player' || type === 'person2') {
+                ctx.fillStyle = '#f1c40f'; // Rayas amarillas
+                ctx.fillRect(x + 16, y + 16, 6, 20);
+                ctx.fillRect(x + 26, y + 16, 6, 20);
+            }
+
+            // Brazos
+            ctx.fillStyle = skin;
+            ctx.fillRect(x + 2, y + 18, 6, 16);
+            ctx.fillRect(x + 40, y + 18, 6, 16);
+
+            // Cabeza
+            ctx.fillStyle = skin;
+            ctx.fillRect(x + 10, y + 2, 28, 16);
+
+            // Pelo
+            ctx.fillStyle = hair;
+            ctx.fillRect(x + 10, y - 4, 28, 8); // Pelo superior
+            ctx.fillRect(x + 8, y + 2, 4, 12);  // Lado izq
+            ctx.fillRect(x + 36, y + 2, 4, 12); // Lado der
+
+            // Ojos
+            ctx.fillStyle = '#000';
+            if (facing === 'down') {
+                ctx.fillRect(x + 16, y + 8, 4, 4);
+                ctx.fillRect(x + 28, y + 8, 4, 4);
+            } else if (facing === 'left') {
+                ctx.fillRect(x + 14, y + 8, 4, 4);
+            } else if (facing === 'right') {
+                ctx.fillRect(x + 30, y + 8, 4, 4);
+            }
+        }
+
+        // ==========================================
+        // 5. ENTIDADES
+        // ==========================================
+        class Entity {
+            constructor(x, y, type, isPlayer = false, name = "") {
+                this.x = x; this.y = y; this.type = type; this.isPlayer = isPlayer; this.name = name;
+                this.width = 48; this.height = 48;
+                this.speed = isPlayer ? 4 : 0;
+                this.vx = 0; this.vy = 0;
+                this.facing = 'down';
+            }
+
+            update() {
+                if (this.isPlayer && !gameState.isDialogueActive) {
+                    if (this.vx !== 0 || this.vy !== 0) {
+                        this.x += this.vx; this.y += this.vy;
+                        if (Math.abs(this.vx) > Math.abs(this.vy)) this.facing = this.vx > 0 ? 'right' : 'left';
+                        else this.facing = this.vy > 0 ? 'down' : 'up';
+                    }
+                    // Límites
+                    this.x = Math.max(0, Math.min(GAME_WIDTH - this.width, this.x));
+                    this.y = Math.max(0, Math.min(GAME_HEIGHT - this.height - 100, this.y));
+                }
+            }
+
+            draw(ctx) {
+                drawCharacter(ctx, this.x, this.y, this.type, this.facing);
+                
+                // Si es NPC, mostrar indicador si estamos cerca
+                if (!this.isPlayer && this === interactableNPC) {
+                    ctx.fillStyle = '#f1c40f';
+                    ctx.font = '24px VT323';
+                    ctx.fillText('!', this.x + 20, this.y - 15);
+                }
+            }
+        }
+
+        // ==========================================
+        // 6. PROYECTILES (Rocas, Palos, Cajas de Té)
+        // ==========================================
+        class Projectile {
+            constructor(startX, startY, type) {
+                this.x = startX; this.y = startY;
+                this.type = type; // 'rock', 'stick', 'tea'
+                this.vx = (Math.random() * 4) - 2; // Velocidad X aleatoria
+                this.vy = -(Math.random() * 8 + 4); // Salto hacia arriba
+                this.gravity = 0.4;
+                this.active = true;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += this.gravity;
+                if (this.y > GAME_HEIGHT - 100) { // Si toca el "agua"
+                    this.active = false;
+                    playSFX('splash');
+                }
+            }
+            draw(ctx) {
+                ctx.fillStyle = this.type === 'tea' ? '#d35400' : (this.type === 'rock' ? '#7f8c8d' : '#8b4513');
+                ctx.fillRect(this.x, this.y, 8, 8);
+            }
+        }
+
+        // ==========================================
+        // 7. DIÁLOGO
+        // ==========================================
+        const dialogueBox = document.getElementById('dialogueBox');
+        const speakerName = document.getElementById('speakerName');
+        const dialogueText = document.getElementById('dialogueText');
+        const continueIndicator = document.getElementById('continueIndicator');
+        const speakerPortrait = document.getElementById('speakerPortrait');
+        const pCtx = speakerPortrait.getContext('2d');
+
+        function startDialogue(nodeId) {
+            if (!nodeId) { endDialogue(); return; }
+            const node = SCRIPT[nodeId];
+            gameState.currentTextNode = node;
+            gameState.isDialogueActive = true;
+            
+            if (node.action) node.action();
+
+            dialogueBox.classList.add('active');
+            continueIndicator.style.display = 'none';
+            
+            if (node.type === "narration") {
+                speakerName.textContent = ""; 
+                speakerPortrait.style.display = 'none';
+                dialogueText.style.fontStyle = "italic"; dialogueText.style.color = "#aaa";
+            } else {
+                speakerName.textContent = node.speaker || "Unknown";
+                dialogueText.style.fontStyle = "normal"; dialogueText.style.color = "#fff";
+                
+                // Dibujar retrato procedural en el canvas
+                speakerPortrait.style.display = 'block';
+                pCtx.clearRect(0, 0, 48, 48);
+                pCtx.fillStyle = '#222'; pCtx.fillRect(0, 0, 48, 48);
+                drawCharacter(pCtx, 0, -5, node.portraitType, 'down');
+            }
+
+            dialogueText.textContent = "";
+            gameState.currentCharIndex = 0; gameState.isTyping = true; gameState.canAdvance = false;
+            clearInterval(gameState.typeTimer);
+            gameState.typeTimer = setInterval(typeWriter, gameState.typeSpeed);
+        }
+
+        function typeWriter() {
+            const node = gameState.currentTextNode;
+            if (!node) return;
+            if (gameState.currentCharIndex < node.text.length) {
+                dialogueText.textContent += node.text.charAt(gameState.currentCharIndex);
+                if (node.text.charAt(gameState.currentCharIndex) !== " " && gameState.currentCharIndex % 2 === 0) playSFX('blip');
+                gameState.currentCharIndex++;
+            } else {
+                clearInterval(gameState.typeTimer);
+                gameState.isTyping = false; gameState.canAdvance = true;
+                continueIndicator.style.display = 'block';
+            }
+        }
+
+        function advanceDialogue() {
+            if (!gameState.isDialogueActive) return;
+            if (gameState.isTyping) {
+                clearInterval(gameState.typeTimer);
+                dialogueText.textContent = gameState.currentTextNode.text;
+                gameState.isTyping = false; gameState.canAdvance = true;
+                continueIndicator.style.display = 'block';
+            } else if (gameState.canAdvance) {
+                const nextNode = gameState.currentTextNode.next;
+                if (nextNode) startDialogue(nextNode); else endDialogue();
+            }
+        }
+
+        function endDialogue() {
+            dialogueBox.classList.remove('active');
+            gameState.isDialogueActive = false;
+            gameState.currentTextNode = null;
+        }
+
+        // ==========================================
+        // 8. LÓGICA DEL JUEGO
+        // ==========================================
+        function initGame() {
+            // Jugador (Persona 1) en el centro
+            player = new Entity(GAME_WIDTH/2, GAME_HEIGHT/2 + 100, 'player', true, 'Person 1');
+            entities.push(player);
+
+            // NPCs (Personas 2, 3 y 4) alrededor
+            entities.push(new Entity(GAME_WIDTH/2 - 150, GAME_HEIGHT/2 - 100, 'person2', false, 'Person 2'));
+            entities.push(new Entity(GAME_WIDTH/2 + 150, GAME_HEIGHT/2 - 50, 'person3', false, 'Person 3'));
+            entities.push(new Entity(GAME_WIDTH/2, GAME_HEIGHT/2 - 150, 'person4', false, 'Person 4'));
+
+            setTimeout(() => { startDialogue('intro'); }, 1000);
+        }
+
+        // Funciones de Guion
+        let riotActive = false;
+        function startRiot() {
+            riotActive = true;
+        }
+
+        let spawnTimer = 0;
+        function spawnFallingObjects() {
+            // En el game loop se encargará de crear proyectiles constantemente
+        }
+
+        function startFadeOut() {
+            document.getElementById('fadeToBlack').style.opacity = '1';
+        }
+
+        function showPhaseEnd() {
+            setTimeout(() => { document.getElementById('phaseEnd').style.display = 'block'; }, 2000);
+        }
+
+        // ==========================================
+        // 9. GAME LOOP
+        // ==========================================
+        function gameLoop() {
+            player.vx = 0; player.vy = 0;
+            
+            if (!gameState.isDialogueActive) {
+                if (keys['w'] || keys['ArrowUp']) player.vy = -player.speed;
+                if (keys['s'] || keys['ArrowDown']) player.vy = player.speed;
+                if (keys['a'] || keys['ArrowLeft']) player.vx = -player.speed;
+                if (keys['d'] || keys['ArrowRight']) player.vx = player.speed;
+            }
+
+            // Comprobar proximidad a NPCs
+            interactableNPC = null;
+            if (!gameState.isDialogueActive) {
+                for (let e of entities) {
+                    if (!e.isPlayer && !riotActive) { // Solo interactuar antes del motín
+                        const dist = Math.hypot(player.x - e.x, player.y - e.y);
+                        if (dist < 70) interactableNPC = e;
+                    }
+                }
+            }
+
+            document.getElementById('interactionHUD').style.display = interactableNPC ? 'block' : 'none';
+
+            // Actualizar entidades y proyectiles
+            entities.forEach(e => e.update());
+            
+            if (riotActive) {
+                spawnTimer++;
+                if (spawnTimer % 10 === 0) { // Generar basura constantemente
+                    const types = ['rock', 'stick', 'tea'];
+                    projectiles.push(new Projectile(Math.random() * GAME_WIDTH, GAME_HEIGHT - 100, types[Math.floor(Math.random()*types.length)]));
+                    if (spawnTimer % 30 === 0) playSFX('throw');
+                }
+            }
+            projectiles.forEach(p => p.update());
+
+            // Renderizar
+            ctx.fillStyle = '#1a1a2e'; // Noche oscura en el puerto
+            ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+
+            if (bgImage && bgImage.complete && bgImage.naturalWidth > 0) {
+                ctx.globalAlpha = 0.6; ctx.drawImage(bgImage, 0, 0, GAME_WIDTH, GAME_HEIGHT); ctx.globalAlpha = 1.0;
+            } else {
+                // Fondo placeholder (Agua y barco)
+                ctx.fillStyle = '#0f3460'; // Agua
+                ctx.fillRect(0, GAME_HEIGHT - 150, GAME_WIDTH, 150);
+                ctx.fillStyle = '#4e342e'; // Casco del barco
+                ctx.fillRect(0, 100, GAME_WIDTH, 200);
+            }
+
+            entities.forEach(e => e.draw(ctx));
+            
+            // Dibujar proyectiles solo si el motín está activo
+            if (riotActive) {
+                projectiles.forEach(p => { if(p.active) p.draw(ctx); });
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // ==========================================
+        // 10. CONTROLES
+        // ==========================================
+        const keys = {};
+        window.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+            if (e.key === ' ' || e.key === 'Enter' || e.key === 'z') {
+                if (gameState.isDialogueActive) advanceDialogue();
+            }
+            if (e.key === 'e' || e.key === 'E') {
+                if (interactableNPC && !gameState.isDialogueActive) {
+                    const npcType = interactableNPC.type;
+                    if (npcType === 'person2') startDialogue('meet_person2');
+                    else if (npcType === 'person3') startDialogue('meet_person3');
+                    else if (npcType === 'person4') startDialogue('meet_person4');
+                }
+            }
+        });
+        window.addEventListener('keyup', (e) => { keys[e.key] = false; });
+        window.addEventListener('keydown', (e) => { if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'ArrowDown') e.preventDefault(); }, false);
+
+        // ==========================================
+        // 11. INICIO
+        // ==========================================
+        initGame();
+        requestAnimationFrame(gameLoop);
+    </script>
+</body>
+</html>
